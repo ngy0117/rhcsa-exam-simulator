@@ -902,6 +902,12 @@ cmd_reset() {
 # Category practice: a single-node session of ~20-25 tasks from ONE RHCSA
 # category. Graded by the normal 'grade'/'report' (it's a standard single-node
 # session), so a focused score for that topic.
+# compose_domain only comes back empty when every task in the category claims a
+# spare disk and no disk is blank.
+_no_spare_disk_msg() {
+  echo "every '$1' task needs a blank spare disk, and none is free. Attach one, or run 'sudo rhcsa-sim reset' to clear a previous attempt off it."
+}
+
 cmd_practice() {
   require_root practice
   local dom="${1:-}"
@@ -934,7 +940,10 @@ cmd_practice() {
   else
     while read -r t; do [[ -n "$t" ]] && tasks+=("$t"); done < <(compose_domain "$dom" "${RHCSA_PRACTICE_SIZE:-25}")
   fi
-  [[ ${#tasks[@]} -gt 0 ]] || die "no tasks found for category '$dom'."
+  if [[ ${#tasks[@]} -eq 0 ]]; then
+    [[ "$dom" == weak ]] && die "no tasks found for category 'weak'."
+    die "$(_no_spare_disk_msg "$dom")"
+  fi
 
   session_active && warn "An existing session will be overwritten."
   hr; echo "${C_BOLD}${C_YEL}  RHCSA CATEGORY PRACTICE — ${dom}  (${#tasks[@]} tasks)${C_OFF}"; hr
@@ -1468,7 +1477,10 @@ cmd_drill() {    # ONE random task against a short clock
     die "unknown category '$cat'. Choose one of: $(available_categories)  (or no argument = any topic)"
   fi
   if [[ -n "$cat" ]]; then t="$(compose_domain "$cat" 50 | shuf -n1)"; else t="$(single_node_tasks | shuf -n1)"; fi
-  [[ -n "$t" ]] || die "no task available to drill."
+  if [[ -z "$t" ]]; then
+    [[ -n "$cat" ]] && die "$(_no_spare_disk_msg "$cat")"
+    die "no task available to drill."
+  fi
   load_meta "$t"
   session_active && warn "An existing session will be overwritten."
   hr; echo "${C_BOLD}${C_YEL}  DRILL — one task, $((secs/60)) minutes on the clock${C_OFF}"; hr

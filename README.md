@@ -64,6 +64,18 @@ sudo ./install.sh        # detects the RHEL version, installs the 'rhcsa-sim' CL
 `rhcsa-sim doctor` and `rhcsa-sim list` then show only what applies to that
 release. (To develop/test the other version on one box: `RHCSA_RHEL=10 rhcsa-sim …`.)
 
+### Updating
+
+The simulator runs from its installed copy in `/opt/rhcsa-sim`, so `git pull`
+alone changes nothing. Pull, then reinstall from your clone:
+
+```bash
+git pull
+sudo ./install.sh
+```
+
+Your attempt history and stats in `/var/lib/rhcsa-sim` are kept.
+
 ## RHCSA 9 vs. RHCSA 10
 
 Red Hat re-based the EX200 exam on RHEL 10. **The simulator matches whichever
