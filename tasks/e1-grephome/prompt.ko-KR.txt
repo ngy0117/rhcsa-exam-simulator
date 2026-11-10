@@ -1,0 +1,1 @@
+/etc/passwd에서 'home' 문자열을 포함하는 모든 행을 찾아 /root/search.txt로 리디렉션하십시오.

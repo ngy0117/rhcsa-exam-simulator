@@ -14,6 +14,11 @@ task a "Configure your system NN" link with Revisit/Done radios.
 import argparse, html, json, os, pwd, re, subprocess, sys, time, urllib.parse, webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+# Resources are installed alongside this script; no third-party dependencies.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'lib'))
+import paper_language
+from paper_language import tr
+
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 ARGS = None
 
@@ -85,11 +90,10 @@ def meta(tid):
 
 
 def prompt_text(tid):
-    for p in (os.path.join(ARGS.prompts, tid + ".txt"),
-              os.path.join(ARGS.tasks, tid, "prompt.txt")):
-        if os.path.isfile(p):
-            return open(p, encoding="utf-8", errors="replace").read()
-    return "(prompt not available)"
+    # Troubleshooting adds generated symptoms to the canonical prompt. Keep those
+    # instructions intact rather than replacing them with the base exam question.
+    translate = load_session().get("exam") != "practice-troubleshoot"
+    return paper_language.prompt(ARGS.tasks, ARGS.prompts, tid, allow_translation=translate)
 
 
 def aid_file(kind, tid):
@@ -284,11 +288,14 @@ SHADOWMAN = """<svg class="logo" viewBox="0 0 120 86" width="104" height="74" ar
 
 def sidebar(sess):
     p = paper(sess)
-    # English-only content; render a real (single-option) selector instead of a
-    # dead link so it shows an option and never looks broken.
-    lang = ('<span class="lang">Select Language: '
-            '<select onchange="this.selectedIndex=0"><option>English</option></select></span>')
-    return """<div id="side">
+    lang = ('<label class="lang" for="paper-language">Select Language / 언어 선택: '
+            '<select id="paper-language" onchange="document.cookie=\'rhcsa_paper_lang=\'+this.value+'
+            '\'; Path=/; SameSite=Strict\';location.reload()">'
+            + ''.join('<option value="%s"%s>%s</option>' % (
+                code, ' selected' if code == paper_language.CURRENT.get() else '', label)
+                for code, label in (("en", "English"), ("ko-KR", "한국어")))
+            + '</select></label>')
+    return tr("""<div id="side">
   %s
   <h1>Red Hat<br>Test Exam</h1>
   <span class="timer" id="timer">Time remaining: --:--</span>
@@ -296,13 +303,13 @@ def sidebar(sess):
   <div class="count">%d task%s</div>
   <div class="count"><a href="/">Exam paper</a> · <a href="/vm">VM control</a></div>
   <div class="count"><a href="/grade">Grade</a> · <a href="/report">Report</a> · <a href="/stats">Stats</a></div>
-</div>""" % (SHADOWMAN, lang, len(p), "" if len(p) == 1 else "s")
+</div>""") % (SHADOWMAN, lang, len(p), "" if paper_language.CURRENT.get() == "ko-KR" or len(p) == 1 else "s")
 
 
 def timer_js(sess):
     start = int(sess.get("start", 0) or 0)
     dur = int(sess.get("duration", 0) or 0)
-    return """<script>
+    return tr("""<script>
 var END=%d, NOW0=%d, T0=Date.now()/1000;
 function fmt(s){ if(s<=0) return "Time's up"; s=Math.floor(s);
   var h=Math.floor(s/3600), m=Math.floor((s%%3600)/60), sec=s%%60, p=function(n){return(n<10?'0':'')+n;};
@@ -316,13 +323,13 @@ function tick(){ var el=document.getElementById('timer'); if(!el) return;
 setInterval(tick,1000); tick();
 function postMark(id,st){ fetch('/api/mark',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
   body:'id='+encodeURIComponent(id)+'&state='+st}); }
-</script>""" % ((start + dur), int(time.time()), "true" if dur <= 0 else "false", start)
+</script>""") % ((start + dur), int(time.time()), "true" if dur <= 0 else "false", start)
 
 
 def page(title, sess, body):
-    return ("<!doctype html><html><head><meta charset='utf-8'><title>%s</title>"
+    return ("<!doctype html><html lang=\"%s\"><head><meta charset='utf-8'><title>%s</title>"
             "<style>%s</style></head><body><div id='wrap'>%s<div class='main'>%s</div></div>%s"
-            "</body></html>") % (html.escape(title), CSS, sidebar(sess), body, timer_js(sess))
+            "</body></html>") % (paper_language.CURRENT.get(), html.escape(title), CSS, sidebar(sess), body, timer_js(sess))
 
 
 def report_ready_banner():
@@ -336,18 +343,18 @@ def report_ready_banner():
     race the user hit (logged in before the post-reboot grade completed)."""
     try:
         if os.path.exists(os.path.join(ARGS.state, "report-ready.flag")):
-            return ("<div style='background:#e6f4ea;border:1px solid #4a9a5e;"
+            return (tr("<div style='background:#e6f4ea;border:1px solid #4a9a5e;"
                     "padding:11px 14px;margin-bottom:14px;border-radius:3px;font-size:15px;'>"
                     "&#9989; <b>Your exam has been graded</b> (persistence checked after the "
                     "reboot). <a class='biglink' href='/report'>View your scored report "
-                    "&rarr;</a></div>")
+                    "&rarr;</a></div>"))
         if os.path.exists(os.path.join(ARGS.state, "report-pending.flag")):
-            return ("<div style='background:#fff3cd;border:1px solid #d9a900;"
+            return (tr("<div style='background:#fff3cd;border:1px solid #d9a900;"
                     "padding:11px 14px;margin-bottom:14px;border-radius:3px;font-size:15px;'>"
                     "&#8987; <b>Grading after the reboot &mdash; in progress&hellip;</b> "
                     "This takes a minute or two (the peer node is graded too). The page "
                     "refreshes automatically; the score appears here when it is ready."
-                    "<script>setTimeout(function(){location.reload();},8000);</script></div>")
+                    "<script>setTimeout(function(){location.reload();},8000);</script></div>"))
     except Exception:
         pass
     return ""
@@ -358,22 +365,22 @@ def exam_page():
     pr = paper(sess)
     marks = load_marks()
     practice = is_practice()
-    banner = ("<div style='background:#e8f5e9;border:1px solid #88aa88;padding:9px 13px;"
+    banner = (tr("<div style='background:#e8f5e9;border:1px solid #88aa88;padding:9px 13px;"
               "margin-bottom:14px;border-radius:3px;font-size:14px;'><b>Practice mode</b> — "
               "learning aids are on. Open any task for <b>Hint</b>, <b>Solution</b> and "
-              "<b>Check my work</b> (a real exam, mock or drill stays aid-free).</div>") if practice else ""
-    body = [report_ready_banner(), banner, "<h2>Configuration Information</h2>",
-            "<p class='intro'>Before you begin, you should review some general configuration "
-            "information outlined in the following link:</p>",
-            "<div class='row'>%s <a class='biglink' href='/config'>Important configuration "
-            "information</a></div>" % radios("config", marks.get("config", ""))]
+              "<b>Check my work</b> (a real exam, mock or drill stays aid-free).</div>")) if practice else ""
+    body = [report_ready_banner(), banner, tr("<h2>Configuration Information</h2>"),
+            tr("<p class='intro'>Before you begin, you should review some general configuration "
+            "information outlined in the following link:</p>"),
+            tr("<div class='row'>%s <a class='biglink' href='/config'>Important configuration "
+            "information</a></div>") % radios("config", marks.get("config", ""))]
     # group tasks by node, in paper order
     last = None
     for e in pr:
         if e["node"] != last:
             body.append("<hr>")
-            body.append("<div class='host'>Perform the following tasks on "
-                        "<code>%s</code>.</div>" % html.escape(host_fqdn(e["node"])))
+            body.append(tr("<div class='host'>Perform the following tasks on "
+                        "<code>%s</code>.</div>") % html.escape(host_fqdn(e["node"])))
             last = e["node"]
         nn = "%02d" % e["num"]
         if practice:
@@ -381,20 +388,20 @@ def exam_page():
             label = "%s. %s &nbsp;<span class='note'>[%s, %s pts]</span>" % (
                 nn, html.escape(m["TASK_TITLE"]), html.escape(m["TASK_DOMAIN"]), html.escape(m["TASK_POINTS"]))
         else:
-            label = "Configure your system %s" % nn
+            label = tr("Configure your system %s") % nn
         body.append("<div class='row'>%s <a href='/task?id=%s'>%s</a></div>" % (
             radios(e["id"], marks.get(e["id"], "")), urllib.parse.quote(e["id"]), label))
-    return page("Red Hat Test Exam", sess, "".join(body))
+    return page(tr("Red Hat Test Exam"), sess, "".join(body))
 
 
 def radios(key, state=""):
     rv = "checked" if state == "revisit" else ""
     dn = "checked" if state == "done" else ""
     g = "mark_" + key
-    return ("<label><input type='radio' name='%s' value='revisit' %s "
+    return (tr("<label><input type='radio' name='%s' value='revisit' %s "
             "onclick=\"postMark('%s','revisit')\"> Revisit</label>"
             "<label><input type='radio' name='%s' value='done' %s "
-            "onclick=\"postMark('%s','done')\"> Done</label>") % (g, rv, key, g, dn, key)
+            "onclick=\"postMark('%s','done')\"> Done</label>")) % (g, rv, key, g, dn, key)
 
 
 def config_page():
@@ -414,63 +421,63 @@ def config_page():
     th = "border:1px solid #b0a98f;padding:6px 18px;text-align:left;background:#efe9d6"
     td = "border:1px solid #b0a98f;padding:6px 18px;font-family:monospace"
 
-    rows = ["<h2>Important configuration information</h2>",
-            "<p class='intro'>During the exam you work with the virtual system(s) listed below; "
-            "you have full root access to them.</p>",
-            "<h3>System Information</h3>",
+    rows = [tr("<h2>Important configuration information</h2>"),
+            tr("<p class='intro'>During the exam you work with the virtual system(s) listed below; "
+            "you have full root access to them.</p>"),
+            tr("<h3>System Information</h3>"),
             "<table style='border-collapse:collapse;margin:10px 0;background:#fff'>",
-            "<tr><th style='%s'>System</th><th style='%s'>IP Address</th></tr>" % (th, th),
+            tr("<tr><th style='%s'>System</th><th style='%s'>IP Address</th></tr>") % (th, th),
             "<tr><td style='%s'>%s</td><td style='%s'>%s</td></tr>" % (td, n1_fqdn, td, n1_ip)]
     for p in peers:
         rows.append("<tr><td style='%s'>%s</td><td style='%s'>%s</td></tr>"
                     % (td, esc(host_fqdn(p)), td, esc(peer_ip(p))))
     rows.append("</table>")
-    dommsg = "The systems are members of the DNS domain <b>%s</b>" % dom
+    dommsg = tr("The systems are members of the DNS domain <b>%s</b>") % dom
     if net:
-        dommsg += ", and all systems are in the <b>%s</b> subnet" % net
-    rows.append("<p>%s. The IP addresses listed are the addresses that <b>should</b> be assigned "
-                "to the systems; you may need to configure the network to reach them.</p>" % dommsg)
+        dommsg += tr(", and all systems are in the <b>%s</b> subnet") % net
+    rows.append(tr("<p>%s. The IP addresses listed are the addresses that <b>should</b> be assigned "
+                "to the systems; you may need to configure the network to reach them.</p>") % dommsg)
 
     # ---- Account Information: root password for node1 only (node2 is reset by you) ----
-    rows.append("<h3>Account Information</h3>")
+    rows.append(tr("<h3>Account Information</h3>"))
     ac = access_conf()
     fresh = str(ac.get("SESSION_START", "")) == str(sess.get("start", ""))
     n1_pw = ac.get("NODE1_ROOTPW", "") if fresh else ""
     n1_reset = "root-password" in tasks_on(n1role)
     if n1_pw and not n1_reset:
-        rows.append("<p>The <b>root</b> password for %s has been set to <b>&quot;%s&quot;</b>. "
+        rows.append(tr("<p>The <b>root</b> password for %s has been set to <b>&quot;%s&quot;</b>. "
                     "Unless otherwise specified, this is the password you use for other accounts "
-                    "you create and for services that require a password.</p>" % (n1_fqdn, esc(n1_pw)))
+                    "you create and for services that require a password.</p>") % (n1_fqdn, esc(n1_pw)))
     elif n1_reset:
-        rows.append("<p>The <b>root</b> password for %s is <b>not provided</b> &mdash; you must "
-                    "reset it as instructed (see the <i>Reset Root Password</i> task).</p>" % n1_fqdn)
+        rows.append(tr("<p>The <b>root</b> password for %s is <b>not provided</b> &mdash; you must "
+                    "reset it as instructed (see the <i>Reset Root Password</i> task).</p>") % n1_fqdn)
     else:
-        rows.append("<p>Log in to %s as <b>student</b> / <b>password</b> and become root with "
-                    "<code>sudo -i</code>.</p>" % n1_fqdn)
+        rows.append(tr("<p>Log in to %s as <b>student</b> / <b>password</b> and become root with "
+                    "<code>sudo -i</code>.</p>") % n1_fqdn)
     for p in peers:
         pf = esc(host_fqdn(p))
         if "root-password" in tasks_on(p):
-            rows.append("<p>The <b>root</b> password for %s is <b>not provided</b> &mdash; you must "
-                        "reset it yourself as instructed (the <i>Reset Root Password</i> task on %s).</p>"
+            rows.append(tr("<p>The <b>root</b> password for %s is <b>not provided</b> &mdash; you must "
+                        "reset it yourself as instructed (the <i>Reset Root Password</i> task on %s).</p>")
                         % (pf, pf))
     reach = ""
     if peers:
         pf0 = esc(host_fqdn(peers[0]))
-        reach = (" Reach %s with <code>ssh student@%s</code> then <code>sudo -i</code> "
-                 "(root SSH may be disabled by a task &mdash; use student + sudo).") % (pf0, pf0)
-    rows.append("<p>Log in as <b>student</b> / <b>password</b>; become root with "
-                "<code>sudo -i</code>.%s</p>" % reach)
+        reach = (tr(" Reach %s with <code>ssh student@%s</code> then <code>sudo -i</code> "
+                 "(root SSH may be disabled by a task &mdash; use student + sudo).")) % (pf0, pf0)
+    rows.append(tr("<p>Log in as <b>student</b> / <b>password</b>; become root with "
+                "<code>sudo -i</code>.%s</p>") % reach)
 
     # ---- Other Information ----
-    rows.append("<h3>Other Information</h3>")
-    rows.append("<p>You may access the systems via SSH or the console. Packages install "
+    rows.append(tr("<h3>Other Information</h3>"))
+    rows.append(tr("<p>You may access the systems via SSH or the console. Packages install "
                 "<b>offline</b> from the attached DVD repository. After completing a task you may "
                 "<b>reboot</b> a system to verify your changes persist, then reopen this exam with "
                 "<code>rhcsa-sim tui</code> &mdash; your progress and the remaining time are preserved. "
                 "When you are finished, grade with <code>rhcsa-sim grade --reboot</code> "
-                "(pass mark <b>210/300</b>).</p>")
-    rows.append("<p><a class='btn' href='/'>&larr; Back to exam paper</a></p>")
-    return page("Configuration Information", sess, "\n".join(rows))
+                "(pass mark <b>210/300</b>).</p>"))
+    rows.append(tr("<p><a class='btn' href='/'>&larr; Back to exam paper</a></p>"))
+    return page(tr("Configuration Information"), sess, "\n".join(rows))
 
 
 def task_page(tid):
@@ -478,21 +485,21 @@ def task_page(tid):
     pr = paper(sess)
     ent = next((e for e in pr if e["id"] == tid), None)
     if not ent:
-        return page("Task", sess, "<h2>Unknown task</h2><p>'%s' is not in this exam.</p>"
-                    "<p><a class='btn' href='/'>&larr; Back</a></p>" % html.escape(tid))
+        return page("Task", sess, tr("<h2>Unknown task</h2><p>'%s' is not in this exam.</p>"
+                    "<p><a class='btn' href='/'>&larr; Back</a></p>") % html.escape(tid))
     m = meta(tid)
     practice = is_practice()
     nn = "%02d" % ent["num"]
     head = ("%s. %s <span class='note'>[%s, %s pts]</span>" % (
         nn, html.escape(m["TASK_TITLE"]), html.escape(m["TASK_DOMAIN"]), html.escape(m["TASK_POINTS"]))
-        if practice else "Configure your system %s" % nn)
+        if practice else tr("Configure your system %s") % nn)
     body = ["<h2>%s</h2>" % head,
-            "<p class='note'>Perform on <code>%s</code></p>" % html.escape(host_fqdn(ent["node"])),
+            tr("<p class='note'>Perform on <code>%s</code></p>") % html.escape(host_fqdn(ent["node"])),
             "<pre>%s</pre>" % html.escape(prompt_text(tid))]
-    body.append("<div class='row'>Mark: %s</div>" % radios(tid, load_marks().get(tid, "")))
+    body.append(tr("<div class='row'>Mark: %s</div>") % radios(tid, load_marks().get(tid, "")))
     if practice:
         body.append(
-            "<p><button class='btn' onclick=\"aid('hint')\">Hint</button>"
+            tr("<p><button class='btn' onclick=\"aid('hint')\">Hint</button>"
             "<button class='btn' onclick=\"aid('solution')\">Solution</button>"
             "<button class='btn red' onclick=\"chk()\">Check my work</button></p>"
             "<div id='out'></div>"
@@ -502,13 +509,13 @@ def task_page(tid):
             "body:'id='+encodeURIComponent(TID)+'&kind='+k}).then(r=>r.text()).then(function(t){"
             "if(k=='solution'){document.getElementById('out').innerHTML=t;}else{show(t);}});}"
             "function chk(){show('Checking ...');fetch('/api/check',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},"
-            "body:'id='+encodeURIComponent(TID)}).then(r=>r.text()).then(show);}</script>"
+            "body:'id='+encodeURIComponent(TID)}).then(r=>r.text()).then(show);}</script>")
             % json.dumps(tid))
     else:
-        body.append("<p class='note'>(Exam mode — no answers or self-check, like the real exam. "
-                    "Use a terminal to do the task, then grade when finished.)</p>")
-    body.append("<p><a class='btn' href='/'>&larr; Back to exam paper</a></p>")
-    return page("Task %s" % nn, sess, "".join(body))
+        body.append(tr("<p class='note'>(Exam mode — no answers or self-check, like the real exam. "
+                    "Use a terminal to do the task, then grade when finished.)</p>"))
+    body.append(tr("<p><a class='btn' href='/'>&larr; Back to exam paper</a></p>"))
+    return page(tr("Task %s") % nn, sess, "".join(body))
 
 
 def vm_page():
@@ -620,7 +627,18 @@ class H(BaseHTTPRequestHandler):
         except BrokenPipeError:
             pass
 
+    def _paper_language(self):
+        from http.cookies import SimpleCookie, CookieError
+        cookie = SimpleCookie()
+        try:
+            cookie.load(self.headers.get('Cookie', ''))
+        except CookieError:
+            pass
+        value = cookie['rhcsa_paper_lang'].value if 'rhcsa_paper_lang' in cookie else 'en'
+        paper_language.CURRENT.set(paper_language.normalize(value))
+
     def do_GET(self):
+        self._paper_language()
         u = urllib.parse.urlparse(self.path)
         q = urllib.parse.parse_qs(u.query)
         if u.path == "/":
@@ -652,6 +670,7 @@ class H(BaseHTTPRequestHandler):
         return urllib.parse.parse_qs(self.rfile.read(n).decode("utf-8")) if n else {}
 
     def do_POST(self):
+        self._paper_language()
         # The actions below run the CLI as root, so only this machine's own page may
         # call them: the Host must be loopback (defeats DNS rebinding) and a browser
         # Origin, if sent, must be this server (defeats CSRF from any other site).

@@ -1,0 +1,9 @@
+이 시스템이 다음 두 저장소를 사용하도록 구성하십시오. 두 저장소는 이 시스템에 로컬로 제공되어 있습니다(오프라인).
+
+  저장소 ID: BaseOS
+  baseurl: file:///opt/rhcsa-repo/BaseOS
+
+  저장소 ID: AppStream
+  baseurl: file:///opt/rhcsa-repo/AppStream
+
+두 저장소 모두 활성화하고 GPG 서명 검사를 비활성화하십시오.

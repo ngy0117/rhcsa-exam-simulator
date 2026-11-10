@@ -1,0 +1,1 @@
+/etc 디렉터리의 내용을 포함하는 /root/backup.tar.gz tar 아카이브를 생성하십시오. gzip으로 압축해야 합니다.

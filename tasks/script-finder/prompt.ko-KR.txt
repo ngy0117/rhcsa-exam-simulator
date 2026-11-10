@@ -1,0 +1,5 @@
+/usr 아래에서 크기가 5k보다 크고 50k보다 작으며 SUID 권한이 설정된 모든 파일을 찾아,
+해당 파일 경로 목록을 /root/setuid.list에 기록하는 /usr/local/bin/mysearch 스크립트를 작성하십시오.
+
+  * 스크립트는 실행 가능해야 합니다.
+  * 인자 없이 mysearch를 실행할 때마다 조건에 일치하는 경로만 포함하도록 /root/setuid.list를 생성하거나 덮어써야 합니다.

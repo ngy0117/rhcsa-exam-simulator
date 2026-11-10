@@ -1,0 +1,8 @@
+이 시스템에서 제공하는 NFS 공유를 사용하여 원격 사용자의 홈 디렉터리를 접근 시 자동 마운트하도록 autofs를 구성하십시오.
+
+  * NFS 내보내기: localhost:/exports/rhome/remoteuser1
+  * 자동 마운트 경로: /rhome/remoteuser1
+  * 읽기 및 쓰기가 가능해야 합니다.
+  * autofs 서비스가 실행 중이며 부팅 시 자동으로 시작되어야 합니다.
+
+ls /rhome/remoteuser1 명령으로 확인하십시오. README 파일이 보여야 합니다.

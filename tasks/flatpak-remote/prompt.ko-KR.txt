@@ -1,0 +1,8 @@
+다음 위치에 로컬 Flatpak 저장소가 제공되어 있습니다.
+
+  file://{{REPO_PATH}}
+
+이 저장소를 가리키는 "{{REMOTE}}" 시스템 전체 Flatpak 원격 저장소를 추가하십시오.
+서명되지 않은 저장소이므로 GPG 검증을 비활성화하십시오.
+
+확인 명령: flatpak remotes

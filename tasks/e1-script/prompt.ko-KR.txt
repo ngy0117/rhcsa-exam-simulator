@@ -1,0 +1,2 @@
+/usr/share 아래에서 크기가 1M보다 작은 모든 파일을 찾아 /root/myfiles에 복사하는 실행 가능한 셸 스크립트를 /usr/local/bin/mysearch에 작성하십시오.
+/root/myfiles를 생성하고 스크립트를 실행하십시오.

@@ -161,3 +161,10 @@ sudo rhcsa-sim grade --reboot        # reboots + grades both, prints one combine
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## RHEL 10 exam-paper language
+
+Choose **English / 한국어** in the browser's **Select Language / 언어 선택** menu.
+English is the default. All five bundled RHEL 10 papers (65 distinct questions)
+include Korean prompts. Changing language preserves the running exam and marks.
+See the [RHEL 10 Korean exam lab guide](docs/RHEL10-KO-LAB.md) for setup and coverage.

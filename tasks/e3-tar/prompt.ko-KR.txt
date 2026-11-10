@@ -1,0 +1,6 @@
+/var/tmp 디렉터리를 다음 두 개의 압축 tar 아카이브로 백업하십시오.
+
+  * /root/test.tar.gz: gzip 압축
+  * /root/test.tar.bz: bzip2 압축
+
+두 아카이브 모두 /var/tmp의 내용을 포함해야 합니다.

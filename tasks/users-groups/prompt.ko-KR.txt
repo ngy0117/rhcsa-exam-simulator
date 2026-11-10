@@ -1,0 +1,7 @@
+다음 사용자와 그룹을 생성하고 그룹 소속을 설정하십시오.
+
+  * sysmgrs 그룹을 생성하십시오.
+  * natasha 사용자를 생성하고 sysmgrs를 보조 그룹으로 지정하십시오.
+  * harry 사용자를 생성하고 sysmgrs를 보조 그룹으로 지정하십시오.
+  * sarah 사용자를 생성하십시오. 대화형 셸에 접근할 수 없어야 하며 sysmgrs에 속하지 않아야 합니다.
+  * natasha, harry, sarah의 암호를 모두 flectrags로 설정하십시오.

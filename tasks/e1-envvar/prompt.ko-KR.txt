@@ -1,0 +1,1 @@
+alies 사용자의 로그인 셸에서 RHCSA 환경변수가 'Welcome to Advantage Pro' 값으로 설정되고 export되도록 구성하십시오.

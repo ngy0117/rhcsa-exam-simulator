@@ -1,0 +1,3 @@
+저장소 ID가 {{RID}}이고 baseurl이 file://{{DIR}}인 새 dnf 저장소를 구성하십시오.
+gpgcheck를 비활성화하고 저장소를 활성화하십시오.
+dnf repolist에서 활성화된 저장소로 표시되어야 합니다.

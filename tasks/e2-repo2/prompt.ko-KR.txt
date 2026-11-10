@@ -1,0 +1,5 @@
+/etc/yum.repos.d/rhcsa.repo에 BaseOS와 AppStream 저장소를 구성하십시오.
+두 저장소 모두 활성화하고 GPG 서명 검사를 비활성화하십시오. 패키지 원본은 로컬에 제공되어 있습니다.
+
+  BaseOS: file:///opt/rhcsa-repo/BaseOS
+  AppStream: file:///opt/rhcsa-repo/AppStream

@@ -1,0 +1,1 @@
+/var/tmp 디렉터리를 gzip으로 압축한 tar 아카이브를 생성하고 /root/test.tar.gz로 저장하십시오.

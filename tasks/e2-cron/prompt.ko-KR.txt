@@ -1,0 +1,1 @@
+harry 사용자로 logger "EX200 Testing" 명령을 3분마다 실행하는 cron 작업을 구성하십시오.

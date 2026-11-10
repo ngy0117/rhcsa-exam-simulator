@@ -1,0 +1,1 @@
+UID가 3533인 manalo 사용자를 생성하고 암호를 flectrag로 설정하십시오.

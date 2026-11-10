@@ -1,0 +1,6 @@
+NFS로 제공되는 LDAP 사용자의 홈 디렉터리를 autofs 서비스를 통해 자동 마운트하도록 구성하십시오.
+
+  * remoteuser1의 홈 디렉터리 원본: localhost:/exports/rhome/remoteuser1
+  * autofs 자동 마운트 경로: /rhome/remoteuser1
+  * 사용자가 자신의 홈 디렉터리를 읽고 쓸 수 있어야 합니다.
+  * remoteuser1의 홈 디렉터리만 접근 가능하면 됩니다.

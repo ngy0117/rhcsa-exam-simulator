@@ -1,0 +1,8 @@
+15분마다 oneshot 서비스를 실행하는 systemd 타이머를 생성하십시오.
+
+  * {{NAME}}.service: Type=oneshot이며 /usr/bin/logger tmr 명령을 실행해야 합니다.
+  * {{NAME}}.timer: 서비스를 15분마다 실행해야 합니다.
+    OnUnitActiveSec=15min 또는 OnCalendar를 사용할 수 있습니다.
+
+유닛 파일을 /etc/systemd/system에 배치하십시오.
+타이머를 활성화하고 부팅 시 자동으로 시작되도록 설정하십시오.

@@ -1,0 +1,3 @@
+/usr/share 아래에서 크기가 400k보다 크고 800k보다 작은 일반 파일을 모두 찾아 /root/myfiles에 복사하는 실행 가능한 셸 스크립트를 /usr/local/bin/myfind에 작성하십시오.
+크기 조건은 find -size의 해석을 따릅니다.
+/root/myfiles를 생성하고 스크립트를 실행하여 일치하는 파일을 복사하십시오.

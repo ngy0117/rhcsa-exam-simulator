@@ -96,6 +96,11 @@ PY
   else
     cp "$src" "$out"
   fi
+  # Additional read-only paper cache. The English output and params stay canonical.
+  if [[ -f "$RHCSA_LIB/paper_language.py" ]]; then
+    python3 "$RHCSA_LIB/paper_language.py" "$dir" "$pf" \
+      "$RHCSA_PROMPTS_DIR/$id.ko-KR.txt" "${RHCSA_RHEL:-9}"
+  fi
 }
 
 # Render a task's reference solution with the session's ACTUAL values: both

@@ -1,0 +1,1 @@
+/usr/share/xml/iso-codes/iso_639_3.xml에서 'ng' 문자열을 포함하는 모든 행을 찾아 /root/list로 리디렉션하십시오.

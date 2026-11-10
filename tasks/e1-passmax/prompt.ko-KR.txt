@@ -1,0 +1,1 @@
+/etc/login.defs에서 기본 암호 최대 사용 기간(PASS_MAX_DAYS)을 20일로 설정하십시오.
